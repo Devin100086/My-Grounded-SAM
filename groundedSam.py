@@ -67,10 +67,12 @@ class GroundingSAM:
             image=cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
             xyxy=detections.xyxy
         )
-        
+
         mask = np.any(mask, axis=0)
         mask = mask.astype(int)
-        mask = np.where(mask == 1, 255, 0)
+        mask = np.where(mask == 1, 255, 0).astype(np.uint8)
+        dilation_kernel = np.ones((3,3), dtype=np.uint8)
+        mask = cv2.dilate(mask, dilation_kernel)
 
         box_annotator = sv.BoxAnnotator()
         mask_annotator = sv.MaskAnnotator()
@@ -80,15 +82,14 @@ class GroundingSAM:
             in detections]
         annotated_image = mask_annotator.annotate(scene=image.copy(), detections=detections)
         annotated_image = box_annotator.annotate(scene=annotated_image, detections=detections, labels=labels)
-        return mask, annotated_image, annotated_frame
         # cv2.imwrite("output/grounded_sam_annotated_image.jpg", annotated_image)
-
+        return mask, annotated_image, annotated_frame
 
 if __name__ == "__main__":
-
     # load image
-    image = cv2.imread("./assets/demo1.jpg")
-    classes = ["a running dog"]
+    image = cv2.imread("./assets/frame_00096.jpg")
+    classes = ["A sculpture consisting entirely of a rectangular base"]
     groundingsam = GroundingSAM()
     mask,_,_ = groundingsam(image, classes)
+    cv2.imwrite("output/grounded_sam_annotated_image.jpg", mask)
 
